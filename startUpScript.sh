@@ -8,4 +8,4 @@ PIJUKEBOX_HOME=/home/pi/piJukebox
 sleep 60
 
 # start the jukeboxUI
-/usr/bin/python PIJUKEBOX_HOME/piJukebox/piJukebox.py
+/usr/bin/python $PIJUKEBOX_HOME/piJukebox/piJukebox.py
