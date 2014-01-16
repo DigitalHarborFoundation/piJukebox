@@ -6,15 +6,18 @@ import curses
 import curses.wrapper
 from curses.textpad import Textbox, rectangle
 from mpd import MPDClient
+from threading import Timer
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
 def drawScreen(stdscr):
+	stdscr.clear()
 	client = MPDClient()               # create client object
 	client.timeout = 10                # network timeout in seconds (floats allowed), default: None
 	client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
 	client.connect("localhost", 6600)  # connect to localhost:6600
-#	print(client.mpd_version)          # print the MPD version
+	client.consume(1)
+
 	songs=client.listplaylistinfo("TC Jukebox") # print result of the command "find any house"
 
 	stdscr.addstr(0,20," _______   __    __   _______           __   __    __   __  ___  _______    .______     ______   ___   ___ ")
@@ -43,9 +46,9 @@ def drawScreen(stdscr):
 			rowCount=1
 			xStart=maxDims[1]/2
 
-			print song['artist']
-			print song['title']
-			print "----------"
+			#print song['artist']
+			#print song['title']
+			#print "----------"
 
 	songList=[]
 	try:
@@ -133,10 +136,7 @@ def drawRick(stdscr):
 	stdscr.clear()
 	drawScreen(stdscr)
 
-
-def main(stdscr):
-	drawScreen(stdscr)
-
+def addSong(stdscr, selectedSongNumber):
 	client = MPDClient()               # create client object
 	client.timeout = 10                # network timeout in seconds (floats allowed), default: None
 	client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
@@ -144,33 +144,47 @@ def main(stdscr):
 	songs=client.listplaylistinfo("TC Jukebox")
 	client.consume(1)
 
-	x=0
-	while x!='q':
-		#drawScreen(stdscr)
-		firstChar = stdscr.getkey(10, 15)
-		x=firstChar
-		secondChar = stdscr.getkey(10,16)
-		stdscr.clear()
-		try:
-			selectedSongNumber=int(firstChar+secondChar)-1
-			if selectedSongNumber==30:
-				selectedSong=songs[selectedSongNumber]
-				songid=client.addid(selectedSong['file'], 0)
-				client.play(0)
-				drawRick(stdscr)
-				
-			elif selectedSongNumber<50:
-				selectedSong=songs[selectedSongNumber]
-				#stdscr.addstr(50,5,str(selectedSong['file']))
-				client.add(selectedSong['file'])
-			stdscr.clear()
-		except:
-			pass	
+	if selectedSongNumber==30:
+		selectedSong=songs[selectedSongNumber]
+		songid=client.addid(selectedSong['file'], 0)
+		client.play(0)
+		drawRick(stdscr)
 		
+	elif selectedSongNumber<50:
+		selectedSong=songs[selectedSongNumber]
+		#stdscr.addstr(50,5,str(selectedSong['file']))
+		client.add(selectedSong['file'])
 		drawScreen(stdscr)
-
+	
 	client.close()                     # send the close command
 	client.disconnect()
+
+def main(stdscr):
+	drawScreen(stdscr)
+
+	stdscr.nodelay(True)
+
+	t = Timer(30.0, drawScreen,args=[stdscr,])
+	t.start()
+
+	x=0
+	while x!='q':
+		if t.isAlive() == False:
+			t = Timer(5.0, drawScreen,args=[stdscr,])
+			t.start() # after 5 seconds
+
+		try:
+			firstChar = stdscr.getkey(10, 15)
+			x=firstChar
+			secondChar = stdscr.getkey(10,16)
+			selectedSongNumber=int(firstChar+secondChar)-1
+			if selectedSongNumber<50:
+				addSong(stdscr,selectedSongNumber)
+		except:
+			pass		
+		
+		
+
 	time.sleep(5)
 
 
