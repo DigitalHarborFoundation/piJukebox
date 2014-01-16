@@ -146,7 +146,7 @@ def main(stdscr):
 
 	x=0
 	while x!='q':
-		# drawScreen(stdscr)
+		#drawScreen(stdscr)
 		firstChar = stdscr.getkey(10, 15)
 		x=firstChar
 		secondChar = stdscr.getkey(10,16)
@@ -155,8 +155,8 @@ def main(stdscr):
 			selectedSongNumber=int(firstChar+secondChar)-1
 			if selectedSongNumber==30:
 				selectedSong=songs[selectedSongNumber]
-				songid=client.addid(selectedSong['file'], 1)
-				client.next()
+				songid=client.addid(selectedSong['file'], 0)
+				client.play(0)
 				drawRick(stdscr)
 				
 			elif selectedSongNumber<50:
