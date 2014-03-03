@@ -10,81 +10,99 @@ from threading import Timer
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
+x='blank'
+
 def drawScreen(stdscr):
-	stdscr.clear()
-	client = MPDClient()               # create client object
-	client.timeout = 10                # network timeout in seconds (floats allowed), default: None
-	client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
-	client.connect("localhost", 6600)  # connect to localhost:6600
-	client.consume(1)
+	if x=='blank':
+		stdscr.erase()
+		client = MPDClient()               # create client object
+		client.timeout = 10                # network timeout in seconds (floats allowed), default: None
+		client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
+		client.connect("localhost", 6600)  # connect to localhost:6600
+		client.consume(1)
 
-	songs=client.listplaylistinfo("TC Jukebox") # print result of the command "find any house"
+		songs=client.listplaylistinfo("TC Jukebox") # print result of the command "find any house"
 
-	stdscr.addstr(0,20," _______   __    __   _______           __   __    __   __  ___  _______    .______     ______   ___   ___ ")
-	stdscr.addstr(1,20,"|       \ |  |  |  | |   ____|         |  | |  |  |  | |  |/  / |   ____|   |   _  \   /  __  \  \  \ /  / ")
-	stdscr.addstr(2,20,"|  .--.  ||  |__|  | |  |__            |  | |  |  |  | |  '  /  |  |__      |  |_)  | |  |  |  |  \  V  /  ")
-	stdscr.addstr(3,20,"|  |  |  ||   __   | |   __|     .--.  |  | |  |  |  | |    <   |   __|     |   _  <  |  |  |  |   >   <   ")
-	stdscr.addstr(4,20,"|  '--'  ||  |  |  | |  |        |  `--'  | |  `--'  | |  .  \  |  |____    |  |_)  | |  `--'  |  /  .  \  ")
-	stdscr.addstr(5,20,"|_______/ |__|  |__| |__|         \______/   \______/  |__|\__\ |_______|   |______/   \______/  /__/ \__\ ")
-
-
-	maxDims=stdscr.getmaxyx()
-
-	colCount=1
-	rowCount=1
-	yStart=14
-	xStart=5
-
-	songStart=0
-
-	for song in songs:
-		songStart+=1
-		stdscr.addstr(yStart+rowCount,xStart,str(songStart).zfill(2) + ". " +  song['title'] + " (" + song['artist'] + ")")
-		#stdscr.addstr(yStart+rowCount,xStart,str(song))
-		rowCount+=1
-		if rowCount > 25 :
-			rowCount=1
-			xStart=maxDims[1]/2
-
-			#print song['artist']
-			#print song['title']
-			#print "----------"
-
-	songList=[]
-	try:
-		currentPlaylist=client.playlistinfo()
-		for playlistSong in currentPlaylist:
-			songList.append(playlistSong['title'])
-			stdscr.addstr(45,5,"Up Next: " + str(songList))
-	except:
-		pass
-
-	status=client.status()
-	if status['state']=="stop":
-		client.play()
-	
-	#stdscr.addstr(41,5,"status: " + str(status))
-
-	try:
-		currentSong=client.currentsong()
-		stdscr.addstr(44,5,"Now Playing: " + str(currentSong['title']) + " (" + str(currentSong['artist']) + ")", curses.A_BOLD)
-	except:
-		pass
-
-	client.close()                     # send the close command
-	client.disconnect()
+		stdscr.addstr(0,35," _______   __    __   _______           __   __    __   __  ___  _______    .______     ______   ___   ___ ")
+		stdscr.addstr(1,35,"|       \ |  |  |  | |   ____|         |  | |  |  |  | |  |/  / |   ____|   |   _  \   /  __  \  \  \ /  / ")
+		stdscr.addstr(2,35,"|  .--.  ||  |__|  | |  |__            |  | |  |  |  | |  '  /  |  |__      |  |_)  | |  |  |  |  \  V  /  ")
+		stdscr.addstr(3,35,"|  |  |  ||   __   | |   __|     .--.  |  | |  |  |  | |    <   |   __|     |   _  <  |  |  |  |   >   <   ")
+		stdscr.addstr(4,35,"|  '--'  ||  |  |  | |  |        |  `--'  | |  `--'  | |  .  \  |  |____    |  |_)  | |  `--'  |  /  .  \  ")
+		stdscr.addstr(5,35,"|_______/ |__|  |__| |__|         \______/   \______/  |__|\__\ |_______|   |______/   \______/  /__/ \__\ ")
 
 
-	curses.echo()            # Enable echoing of characters
-	stdscr.addstr(8,3, "Enter 2 Digit Song Number: ")
+		maxDims=stdscr.getmaxyx()
 
-	editwin = curses.newwin(6,30, 2,1)
-	rectangle(stdscr, 6,0, 6+5+1, 1+30+1)
+		colCount=1
+		rowCount=1
+		yStart=7
+		xStart=5
 
-	stdscr.refresh()
+		songStart=0
+
+		if len(songs)>88:
+			songs=songs[:88]
+
+		for song in songs:
+			songStart+=1
+			
+			# print song['artist']
+			# print song['title']
+			# print "----------"
+
+			artist= song['artist']
+			artist= (artist[:20] + '...') if len(artist) > 20 else artist
+
+			songTitle=song['title']
+			songTitle=(songTitle[:25] + '...') if len(songTitle) > 25 else songTitle
+
+			stdscr.addstr(yStart+rowCount,xStart,str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")")
+			#stdscr.addstr(yStart+rowCount,xStart,str(song))
+			rowCount+=1
+			if rowCount > 44 :
+				rowCount=1
+				xStart=maxDims[1]/2
+
+				#print song['artist']
+				#print song['title']
+				#print "----------"
+
+		songList=[]
+		try:
+			currentPlaylist=client.playlistinfo()
+			for playlistSong in currentPlaylist:
+				songList.append(playlistSong['title'])
+				stdscr.addstr(57,5,"Up Next: " + str(songList))
+		except:
+			pass
+
+		status=client.status()
+		if status['state']=="stop":
+			client.play()
+		
+		#stdscr.addstr(41,5,"status: " + str(status))
+
+		try:
+			currentSong=client.currentsong()
+			stdscr.addstr(55,5,"Now Playing: " + str(currentSong['title']) + " (" + str(currentSong['artist']) + ")", curses.A_BOLD)
+			# stdscr.addstr(56,5," (" + str(currentSong['artist']) + ")", curses.A_BOLD)
+		except:
+			pass
+
+		client.close()                     # send the close command
+		client.disconnect()
+
+
+		curses.echo()            # Enable echoing of characters
+		stdscr.addstr(2,3, "Enter 2 Digit Song Number: ")
+
+		editwin = curses.newwin(1,30, 2,1)
+		rectangle(stdscr, 1,0, 1+5+1, 1+30+1)
+
+		stdscr.refresh()
 
 def drawRick(stdscr):
-	stdscr.clear()
+	stdscr.erase()
 	stdscr.addstr(0,0,"~~~~~~~~:~~~~~++I$O88DDDDD88DDDDD88OO88DD8D8ZZZ8Z$$$$?+==~==~~~~~~~==~~~~~~~~~==")
 	stdscr.addstr(1,0,"~~~~~~~~~~~~~I$77$O8DDDDDDDD88DNDDD88D8D888OZ$ZOOZZZZI+==~~~~~~~~~~===~~~=~====~")
 	stdscr.addstr(2,0,"~~~~~~~~~~~=7I$Z88888888D8D8DDDDDD88888OO8OZ$ZZZOZOZZI=~~~~~~~~~~~~====~~~~~==~~")
@@ -150,7 +168,7 @@ def addSong(stdscr, selectedSongNumber):
 		client.play(0)
 		drawRick(stdscr)
 		
-	elif selectedSongNumber<50:
+	elif selectedSongNumber<100:
 		selectedSong=songs[selectedSongNumber]
 		#stdscr.addstr(50,5,str(selectedSong['file']))
 		client.add(selectedSong['file'])
@@ -159,30 +177,74 @@ def addSong(stdscr, selectedSongNumber):
 	client.close()                     # send the close command
 	client.disconnect()
 
+def drawSongs(stdscr):
+	client = MPDClient()               # create client object
+	client.timeout = 10                # network timeout in seconds (floats allowed), default: None
+	client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
+	client.connect("localhost", 6600)  # connect to localhost:6600
+	client.consume(1)
+
+	if x=='blank':
+		stdscr.addstr(54,5,"                                                                                                                                                                                     ")
+		stdscr.addstr(55,5,"                                                                                                                                                                                ") 
+
+		songList=[]
+		try:
+			currentPlaylist=client.playlistinfo()
+			for playlistSong in currentPlaylist:
+				songList.append(playlistSong['title'])
+				stdscr.addstr(57,5,"Up Next: " + str(songList))
+		except:
+			pass
+
+		try:
+			currentSong=client.currentsong()
+			stdscr.addstr(55,5,"Now Playing: " + str(currentSong['title']) + " (" + str(currentSong['artist']) + ")", curses.A_BOLD)
+			# stdscr.addstr(56,5," (" + str(currentSong['artist']) + ")", curses.A_BOLD)
+
+		except:
+			pass
+
+		client.close()                     # send the close command
+		client.disconnect()
+		stdscr.refresh()
+
+
 def main(stdscr):
 	drawScreen(stdscr)
+	f = open('logFile.txt', 'w')
 
 	stdscr.nodelay(True)
 
-	t = Timer(30.0, drawScreen,args=[stdscr,])
+	t = Timer(5.0, drawSongs,args=[stdscr,])
 	t.start()
 
-	x=0
-	while x!='q':
-		if t.isAlive() == False:
-			t = Timer(5.0, drawScreen,args=[stdscr,])
-			t.start() # after 5 seconds
+	fullScreenTimer=Timer(60.0, drawScreen,args=[stdscr,])
+	fullScreenTimer.start()
 
+	x='blank'
+	while x!='qq':
 		try:
-			firstChar = stdscr.getkey(10, 15)
-			x=firstChar
-			secondChar = stdscr.getkey(10,16)
-			selectedSongNumber=int(firstChar+secondChar)-1
-			if selectedSongNumber<50:
-				addSong(stdscr,selectedSongNumber)
+			if x!='blank':
+				x=str(x) + str(stdscr.getkey(4,16))
+				selectedSongNumber=int(x)-1
+
+				if selectedSongNumber<100:
+					addSong(stdscr,selectedSongNumber)
+				x='blank'
+			else:
+				x=stdscr.getkey(4,15)
+
 		except:
-			pass		
-		
+			if t.isAlive() == False:
+				f.write("Exception getting key\n")
+				f.write("t is alive: " + str(t.isAlive()) + "\n")
+				t = Timer(5.0, drawSongs,args=[stdscr,])
+				t.start() # after 5 seconds
+			if fullScreenTimer.isAlive()==False:
+				fullScreenTimer=Timer(60.0, drawScreen,args=[stdscr,])
+				fullScreenTimer.start()
+			pass				
 		
 
 	time.sleep(5)
