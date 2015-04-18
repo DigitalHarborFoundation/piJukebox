@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+playlistName="TC Jukebox"
+
 import time
 import curses
 import curses.wrapper
@@ -8,11 +10,21 @@ from curses.textpad import Textbox, rectangle
 from mpd import MPDClient
 from threading import Timer
 import locale
+import logging
 locale.setlocale(locale.LC_ALL, '')
+
+logging.basicConfig(filename='debug.log',level=logging.DEBUG)
 
 x='blank'
 
+maxHeight=0
+maxWidth=0
+
 def drawScreen(stdscr):
+	logging.debug("Drawing Screen\n")
+	global maxHeight
+	global maxWidth
+
 	if x=='blank':
 		stdscr.erase()
 		client = MPDClient()               # create client object
@@ -21,7 +33,7 @@ def drawScreen(stdscr):
 		client.connect("localhost", 6600)  # connect to localhost:6600
 		client.consume(1)
 
-		songs=client.listplaylistinfo("TC Jukebox") # print result of the command "find any house"
+		songs=client.listplaylistinfo(playlistName) # print result of the command find playlist
 
 		stdscr.addstr(0,35," _______   __    __   _______           __   __    __   __  ___  _______    .______     ______   ___   ___ ")
 		stdscr.addstr(1,35,"|       \ |  |  |  | |   ____|         |  | |  |  |  | |  |/  / |   ____|   |   _  \   /  __  \  \  \ /  / ")
@@ -31,75 +43,58 @@ def drawScreen(stdscr):
 		stdscr.addstr(5,35,"|_______/ |__|  |__| |__|         \______/   \______/  |__|\__\ |_______|   |______/   \______/  /__/ \__\ ")
 
 
-		maxDims=stdscr.getmaxyx()
+		maxHeight, maxWidth =stdscr.getmaxyx()
 
 		colCount=1
 		rowCount=1
-		yStart=7
+		yStart=6
 		xStart=5
+		maxRows= ((maxHeight-5)) - yStart
+		maxStringLength=(maxWidth-5)/4
 
 		songStart=0
 
-		if len(songs)>88:
-			songs=songs[:88]
-
 		for song in songs:
 			songStart+=1
-			
-			# print song['artist']
-			# print song['title']
-			# print "----------"
 
 			artist= song['artist']
-			artist= (artist[:20] + '...') if len(artist) > 20 else artist
+			artist= (artist[:maxStringLength] + '...') if len(artist) > maxStringLength else artist
 
 			songTitle=song['title']
-			songTitle=(songTitle[:25] + '...') if len(songTitle) > 25 else songTitle
+			songTitle=(songTitle[:maxStringLength] + '...') if len(songTitle) > maxStringLength else songTitle
 
-			stdscr.addstr(yStart+rowCount,xStart,str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")")
+			if(rowCount < maxRows):
+				# stdscr.addstr(yStart+rowCount,xStart,str(rowCount) + " of " + str(maxRows))
+				logging.debug(str(rowCount) + " of " + str(maxRows) + "\n")
+				logging.debug(str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")")
+				stdscr.addstr(yStart+rowCount,xStart,str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")" )
+
 			#stdscr.addstr(yStart+rowCount,xStart,str(song))
+
 			rowCount+=1
-			if rowCount > 44 :
+			if rowCount > maxRows :
 				rowCount=1
-				xStart=maxDims[1]/2
-
-				#print song['artist']
-				#print song['title']
-				#print "----------"
-
-		songList=[]
-		try:
-			currentPlaylist=client.playlistinfo()
-			for playlistSong in currentPlaylist:
-				songList.append(playlistSong['title'])
-				stdscr.addstr(57,5,"Up Next: " + str(songList))
-		except:
-			pass
+				xStart=maxWidth/2
 
 		status=client.status()
 		if status['state']=="stop":
 			client.play()
-		
-		#stdscr.addstr(41,5,"status: " + str(status))
-
-		try:
-			currentSong=client.currentsong()
-			stdscr.addstr(55,5,"Now Playing: " + str(currentSong['title']) + " (" + str(currentSong['artist']) + ")", curses.A_BOLD)
-			# stdscr.addstr(56,5," (" + str(currentSong['artist']) + ")", curses.A_BOLD)
-		except:
-			pass
 
 		client.close()                     # send the close command
 		client.disconnect()
 
 
+
+		stdscr.addstr(1,3, "Enter 2 Digit Song Number: ")
+
+		rectangle(stdscr, 0,0, 5, 30)
+
+		# editwin = curses.newwin(1,30, 2,1)
+
 		curses.echo()            # Enable echoing of characters
-		stdscr.addstr(2,3, "Enter 2 Digit Song Number: ")
-
-		editwin = curses.newwin(1,30, 2,1)
-		rectangle(stdscr, 1,0, 1+5+1, 1+30+1)
-
 		stdscr.refresh()
+
+		drawSongs(stdscr)
 
 def drawRick(stdscr):
 	stdscr.erase()
@@ -154,6 +149,7 @@ def drawRick(stdscr):
 	stdscr.clear()
 	drawScreen(stdscr)
 
+
 def addSong(stdscr, selectedSongNumber):
 	client = MPDClient()               # create client object
 	client.timeout = 10                # network timeout in seconds (floats allowed), default: None
@@ -167,17 +163,20 @@ def addSong(stdscr, selectedSongNumber):
 		songid=client.addid(selectedSong['file'], 0)
 		client.play(0)
 		drawRick(stdscr)
-		
+	elif selectedSongNumber==98:
+		client.clear()
+
 	elif selectedSongNumber<100:
 		selectedSong=songs[selectedSongNumber]
 		#stdscr.addstr(50,5,str(selectedSong['file']))
 		client.add(selectedSong['file'])
 		drawScreen(stdscr)
-	
+
 	client.close()                     # send the close command
 	client.disconnect()
 
 def drawSongs(stdscr):
+	logging.debug("Drawing Songs" + "\n")
 	client = MPDClient()               # create client object
 	client.timeout = 10                # network timeout in seconds (floats allowed), default: None
 	client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
@@ -185,24 +184,28 @@ def drawSongs(stdscr):
 	client.consume(1)
 
 	if x=='blank':
-		stdscr.addstr(54,5,"                                                                                                                                                                                     ")
-		stdscr.addstr(55,5,"                                                                                                                                                                                ") 
+		blankLine="                                                                                                                                                                                     "
+
+		# print("Max Height", maxHeight)
+		# print("Max Width", maxWidth)
+
+		stdscr.addstr(maxHeight-2,0,blankLine[:maxWidth-5])
+		stdscr.addstr(maxHeight-3,0,blankLine[:maxWidth-5])
 
 		songList=[]
 		try:
 			currentPlaylist=client.playlistinfo()
 			for playlistSong in currentPlaylist:
 				songList.append(playlistSong['title'])
-				stdscr.addstr(57,5,"Up Next: " + str(songList))
+			stdscr.addstr(maxHeight-2,5,"Up Next: " + str(songList))
 		except:
 			pass
 
 		try:
 			currentSong=client.currentsong()
-			stdscr.addstr(55,5,"Now Playing: " + str(currentSong['title']) + " (" + str(currentSong['artist']) + ")", curses.A_BOLD)
-			# stdscr.addstr(56,5," (" + str(currentSong['artist']) + ")", curses.A_BOLD)
-
+			stdscr.addstr(maxHeight-3,5,"Now Playing: " + str(currentSong['title']) + " (" + str(currentSong['artist']) + ")", curses.A_BOLD)
 		except:
+			stdscr.addstr(maxHeight-3,5,"Now Playing: ", curses.A_BOLD)
 			pass
 
 		client.close()                     # send the close command
@@ -212,11 +215,10 @@ def drawSongs(stdscr):
 
 def main(stdscr):
 	drawScreen(stdscr)
-	f = open('logFile.txt', 'w')
 
 	stdscr.nodelay(True)
 
-	t = Timer(5.0, drawSongs,args=[stdscr,])
+	t = Timer(7.0, drawSongs,args=[stdscr,])
 	t.start()
 
 	fullScreenTimer=Timer(60.0, drawScreen,args=[stdscr,])
@@ -237,15 +239,15 @@ def main(stdscr):
 
 		except:
 			if t.isAlive() == False:
-				f.write("Exception getting key\n")
-				f.write("t is alive: " + str(t.isAlive()) + "\n")
-				t = Timer(5.0, drawSongs,args=[stdscr,])
+				# logging.debug("Exception getting key\n")
+				# logging.debug("t is alive: " + str(t.isAlive()) + "\n")
+				t = Timer(7.0, drawSongs,args=[stdscr,])
 				t.start() # after 5 seconds
 			if fullScreenTimer.isAlive()==False:
 				fullScreenTimer=Timer(60.0, drawScreen,args=[stdscr,])
 				fullScreenTimer.start()
-			pass				
-		
+			pass
+
 
 	time.sleep(5)
 
