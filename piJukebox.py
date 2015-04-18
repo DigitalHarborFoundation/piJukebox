@@ -48,9 +48,9 @@ def drawScreen(stdscr):
 		colCount=1
 		rowCount=1
 		yStart=6
-		xStart=5
+		xStart=2
 		maxRows= ((maxHeight-5)) - yStart
-		maxStringLength=(maxWidth/2 - 12) / 2
+		maxStringLength=(maxWidth/2 - 13) / 2
 
 		songStart=0
 
