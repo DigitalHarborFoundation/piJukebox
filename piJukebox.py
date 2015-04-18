@@ -50,7 +50,7 @@ def drawScreen(stdscr):
 		yStart=6
 		xStart=5
 		maxRows= ((maxHeight-5)) - yStart
-		maxStringLength=(maxWidth-5)/4
+		maxStringLength=(maxWidth-10)/4
 
 		songStart=0
 
