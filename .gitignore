@@ -1,5 +1,7 @@
 *.py[cod]
 
+debug.log
+
 # C extensions
 *.so
 
