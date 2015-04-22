@@ -11,7 +11,8 @@ from mpd import MPDClient
 from threading import Timer
 import locale
 import logging
-locale.setlocale(locale.LC_ALL, '')
+
+locale.setlocale(locale.LC_ALL, 'en_US.utf8')
 
 logging.basicConfig(filename='debug.log',level=logging.DEBUG)
 
@@ -27,6 +28,7 @@ def drawScreen(stdscr):
 
 	if x=='blank':
 		stdscr.erase()
+
 		client = MPDClient()               # create client object
 		client.timeout = 10                # network timeout in seconds (floats allowed), default: None
 		client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
@@ -41,6 +43,11 @@ def drawScreen(stdscr):
 		stdscr.addstr(3,35,"|  |  |  ||   __   | |   __|     .--.  |  | |  |  |  | |    <   |   __|     |   _  <  |  |  |  |   >   <   ")
 		stdscr.addstr(4,35,"|  '--'  ||  |  |  | |  |        |  `--'  | |  `--'  | |  .  \  |  |____    |  |_)  | |  `--'  |  /  .  \  ")
 		stdscr.addstr(5,35,"|_______/ |__|  |__| |__|         \______/   \______/  |__|\__\ |_______|   |______/   \______/  /__/ \__\ ")
+
+		curses.echo()            # Enable echoing of characters
+		stdscr.addstr(2,3, "Enter 2 Digit Song Number: ")
+
+		rectangle(stdscr, 1,0, 5, 30)
 
 
 		maxHeight, maxWidth =stdscr.getmaxyx()
@@ -65,8 +72,8 @@ def drawScreen(stdscr):
 
 			if(rowCount < maxRows):
 				# stdscr.addstr(yStart+rowCount,xStart,str(rowCount) + " of " + str(maxRows))
-				logging.debug(str(rowCount) + " of " + str(maxRows) + "\n")
-				logging.debug(str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")")
+				# logging.debug(str(rowCount) + " of " + str(maxRows) + "\n")
+				# logging.debug(str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")")
 				stdscr.addstr(yStart+rowCount,xStart,str(songStart).zfill(2) + ". " +  songTitle + " (" + artist + ")" )
 
 			#stdscr.addstr(yStart+rowCount,xStart,str(song))
@@ -83,15 +90,6 @@ def drawScreen(stdscr):
 		client.close()                     # send the close command
 		client.disconnect()
 
-
-
-		stdscr.addstr(1,3, "Enter 2 Digit Song Number: ")
-
-		rectangle(stdscr, 0,0, 5, 30)
-
-		# editwin = curses.newwin(1,30, 2,1)
-
-		curses.echo()            # Enable echoing of characters
 		stdscr.refresh()
 
 		drawSongs(stdscr)
@@ -188,9 +186,13 @@ def drawSongs(stdscr):
 
 		# print("Max Height", maxHeight)
 		# print("Max Width", maxWidth)
-
-		stdscr.addstr(maxHeight-2,0,blankLine[:maxWidth-5])
-		stdscr.addstr(maxHeight-3,0,blankLine[:maxWidth-5])
+		#Clear Song lines
+		stdscr.move(maxHeight-2,0)
+		stdscr.clrtoeol()
+		stdscr.move(maxHeight-3,0)
+		stdscr.clrtoeol()
+		# stdscr.addstr(maxHeight-2,0,blankLine[:maxWidth-5])
+		# stdscr.addstr(maxHeight-3,0,blankLine[:maxWidth-5])
 
 		songList=[]
 		try:
@@ -218,7 +220,7 @@ def main(stdscr):
 
 	stdscr.nodelay(True)
 
-	t = Timer(7.0, drawSongs,args=[stdscr,])
+	t = Timer(5.0, drawSongs,args=[stdscr,])
 	t.start()
 
 	fullScreenTimer=Timer(60.0, drawScreen,args=[stdscr,])
@@ -248,8 +250,11 @@ def main(stdscr):
 				fullScreenTimer.start()
 			pass
 
-
-	time.sleep(5)
+	stdscr.keypad(0);
+	# time.sleep(5)
 
 
 curses.wrapper(main)
+print "quiting"
+curses.nocbreak(); curses.echo()
+curses.endwin()
